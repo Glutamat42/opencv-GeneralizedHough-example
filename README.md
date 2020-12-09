@@ -18,19 +18,26 @@ Some hints:
   With those my notebook requires about 5 minutes to deliver a result.
 
 ## Code
+
 ```c++
-int main(int argc, char** argv) {
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char **argv) {
 //  load source images
-    image = imread("../mini_image.jpg");
-    cv::Mat imgTemplate = imread("../mini_template.jpg");
+    Mat image = imread("../mini_image.jpg");
+    Mat imgTemplate = imread("../mini_template.jpg");
 
 //  create grayscale image and template
-    cv::Mat templ = cv::Mat(imgTemplate.rows, imgTemplate.cols, CV_8UC1);
-    cv::cvtColor(imgTemplate, templ, COLOR_RGB2GRAY);
-    cv::cvtColor(image, grayImage, COLOR_RGB2GRAY);
+    Mat templ = Mat(imgTemplate.rows, imgTemplate.cols, CV_8UC1);
+    Mat grayImage;
+    cvtColor(imgTemplate, templ, COLOR_RGB2GRAY);
+    cvtColor(image, grayImage, COLOR_RGB2GRAY);
 
 //  create variable for location, scale and rotation of detected templates
-    std::vector<Vec4f> positionBallard, positionGuil;
+    vector<Vec4f> positionBallard, positionGuil;
 
 //  template width and height
     int w = templ.cols;
@@ -48,7 +55,7 @@ int main(int argc, char** argv) {
     ballard->setCannyHighThresh(110);
     ballard->setTemplate(templ);
 
-    
+
 //  create guil and set options
     Ptr<GeneralizedHoughGuil> guil = createGeneralizedHoughGuil();
     guil->setMinDist(10);
@@ -81,10 +88,10 @@ int main(int argc, char** argv) {
 
 
 //  draw ballard
-    for (std::vector<Vec4f>::iterator iter = positionBallard.begin(); iter != positionBallard.end(); ++iter) {
-        RotatedRect rRect = cv::RotatedRect(Point2f((*iter)[0], (*iter)[1]),
-                                            Size2f(w * (*iter)[2], h * (*iter)[2]),
-                                            (*iter)[3]);
+    for (vector<Vec4f>::iterator iter = positionBallard.begin(); iter != positionBallard.end(); ++iter) {
+        RotatedRect rRect = RotatedRect(Point2f((*iter)[0], (*iter)[1]),
+                                        Size2f(w * (*iter)[2], h * (*iter)[2]),
+                                        (*iter)[3]);
         Point2f vertices[4];
         rRect.points(vertices);
         for (int i = 0; i < 4; i++)
@@ -92,17 +99,17 @@ int main(int argc, char** argv) {
     }
 
 //  draw guil
-    for (std::vector<Vec4f>::iterator iter = positionGuil.begin(); iter != positionGuil.end(); ++iter) {
-        RotatedRect rRect = cv::RotatedRect(Point2f((*iter)[0], (*iter)[1]),
-                                            Size2f(w * (*iter)[2], h * (*iter)[2]),
-                                            (*iter)[3]);
+    for (vector<Vec4f>::iterator iter = positionGuil.begin(); iter != positionGuil.end(); ++iter) {
+        RotatedRect rRect = RotatedRect(Point2f((*iter)[0], (*iter)[1]),
+                                        Size2f(w * (*iter)[2], h * (*iter)[2]),
+                                        (*iter)[3]);
         Point2f vertices[4];
         rRect.points(vertices);
         for (int i = 0; i < 4; i++)
             line(image, vertices[i], vertices[(i + 1) % 4], Scalar(0, 255, 0), 2);
     }
 
-    cv::imshow("result_img", image);
+    imshow("result_img", image);
     waitKey();
     return EXIT_SUCCESS;
 }
@@ -111,18 +118,18 @@ int main(int argc, char** argv) {
 ## Explanation
 ### Load image, template and setup variables
 ```c++
-int main(int argc, char** argv) {
 //  load source images
-    image = imread("../mini_image.jpg");
-    cv::Mat imgTemplate = imread("../mini_template.jpg");
+    Mat image = imread("../mini_image.jpg");
+    Mat imgTemplate = imread("../mini_template.jpg");
 
 //  create grayscale image and template
-    cv::Mat templ = cv::Mat(imgTemplate.rows, imgTemplate.cols, CV_8UC1);
-    cv::cvtColor(imgTemplate, templ, COLOR_RGB2GRAY);
-    cv::cvtColor(image, grayImage, COLOR_RGB2GRAY);
+    Mat templ = Mat(imgTemplate.rows, imgTemplate.cols, CV_8UC1);
+    Mat grayImage;
+    cvtColor(imgTemplate, templ, COLOR_RGB2GRAY);
+    cvtColor(image, grayImage, COLOR_RGB2GRAY);
 
 //  create variable for location, scale and rotation of detected templates
-    std::vector<Vec4f> positionBallard, positionGuil;
+    vector<Vec4f> positionBallard, positionGuil;
 
 //  template width and height
     int w = templ.cols;
@@ -140,82 +147,81 @@ An example could look as follows: `[200, 100, 0.9, 120]`
 
 ### Setup parameters
 ```c++
-    //  create ballard and set options
+//  create ballard and set options
     Ptr<GeneralizedHoughBallard> ballard = createGeneralizedHoughBallard();
     ballard->setMinDist(10);
     ballard->setLevels(360);
     ballard->setDp(2);
     ballard->setMaxBufferSize(1000);
     ballard->setVotesThreshold(40);
-    
+
     ballard->setCannyLowThresh(30);
     ballard->setCannyHighThresh(110);
     ballard->setTemplate(templ);
-    
-    
-    //  create guil and set options
+
+
+//  create guil and set options
     Ptr<GeneralizedHoughGuil> guil = createGeneralizedHoughGuil();
     guil->setMinDist(10);
     guil->setLevels(360);
     guil->setDp(3);
     guil->setMaxBufferSize(1000);
-    
+
     guil->setMinAngle(0);
     guil->setMaxAngle(360);
     guil->setAngleStep(1);
     guil->setAngleThresh(1500);
-    
+
     guil->setMinScale(0.5);
     guil->setMaxScale(2.0);
     guil->setScaleStep(0.05);
     guil->setScaleThresh(50);
-    
+
     guil->setPosThresh(10);
-    
+
     guil->setCannyLowThresh(30);
     guil->setCannyHighThresh(110);
-    
+
     guil->setTemplate(templ);
 ```
 Finding the optimal values can end up in trial and error and depends on many factors, such as the resolution of the image.
 
 ### Run detection
 ```c++  
-    //  execute ballard detection
+//  execute ballard detection
     ballard->detect(grayImage, positionBallard);
-    //  execute guil detection
+//  execute guil detection
     guil->detect(grayImage, positionGuil);
 ```
 As mentioned above this step (especially for guil) might take forever.
 
 ### Draw results and show image
 ```c++
-    //  draw ballard
-    for (std::vector<Vec4f>::iterator iter = positionBallard.begin(); iter != positionBallard.end(); ++iter) {
-        RotatedRect rRect = cv::RotatedRect(Point2f((*iter)[0], (*iter)[1]),
-                                            Size2f(w * (*iter)[2], h * (*iter)[2]),
-                                            (*iter)[3]);
+//  draw ballard
+    for (vector<Vec4f>::iterator iter = positionBallard.begin(); iter != positionBallard.end(); ++iter) {
+        RotatedRect rRect = RotatedRect(Point2f((*iter)[0], (*iter)[1]),
+                                        Size2f(w * (*iter)[2], h * (*iter)[2]),
+                                        (*iter)[3]);
         Point2f vertices[4];
         rRect.points(vertices);
         for (int i = 0; i < 4; i++)
             line(image, vertices[i], vertices[(i + 1) % 4], Scalar(255, 0, 0), 6);
     }
 
-    //  draw guil
-    for (std::vector<Vec4f>::iterator iter = positionGuil.begin(); iter != positionGuil.end(); ++iter) {
-        RotatedRect rRect = cv::RotatedRect(Point2f((*iter)[0], (*iter)[1]),
-                                            Size2f(w * (*iter)[2], h * (*iter)[2]),
-                                            (*iter)[3]);
+//  draw guil
+    for (vector<Vec4f>::iterator iter = positionGuil.begin(); iter != positionGuil.end(); ++iter) {
+        RotatedRect rRect = RotatedRect(Point2f((*iter)[0], (*iter)[1]),
+                                        Size2f(w * (*iter)[2], h * (*iter)[2]),
+                                        (*iter)[3]);
         Point2f vertices[4];
         rRect.points(vertices);
         for (int i = 0; i < 4; i++)
             line(image, vertices[i], vertices[(i + 1) % 4], Scalar(0, 255, 0), 2);
     }
 
-    cv::imshow("result_img", image);
+    imshow("result_img", image);
     waitKey();
     return EXIT_SUCCESS;
-}
 ```
 
 # Result
