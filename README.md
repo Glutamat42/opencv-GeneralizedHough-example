@@ -1,3 +1,6 @@
+This Howto is (now) part of the [official openCV documentation](https://docs.opencv.org/4.7.0/da/ddc/tutorial_generalized_hough_ballard_guil.html). The version there has already some improvements. Please refer to the official docs.
+
+
 # Goal
 In this tutorial you will lern how to:
 - Use `GeneralizedHoughBallard` and `GeneralizedHoughGuil` to detect an object
